@@ -1,6 +1,6 @@
 
 ## env variables
-CONNECTION_STR = ""
+CONNECTION_STR = "mongodb+srv://yash:yash@cluster0.v50rpgp.mongodb.net/test"
 
 ##commands
 EXIT = "exit"

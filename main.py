@@ -20,7 +20,6 @@ class main:
         blogs_result = self.blogs.find_one({'name': blog_name})
         blog_id = None
         
-        print(blogs_result)
         if blogs_result is None:
             blog_dict = {'name': blog_name}
             blog = self.blogs.insert_one(blog_dict)
@@ -89,14 +88,7 @@ class main:
         
         return f"Post and Comment deleted by user: {user_name}"
     
-
-    def show_blog(self, blog_name):
-        blog = self.blogs.find_one({'name': blog_name})
-        if blog is None:
-            return "No blog found"
-        blog_id = blog['_id']
-        posts = self.posts.find({'blog': blog_id, 'active': 1})
-
+    def get_post_comment_str(self, posts):
         blog_str = ""
         blog_str += "Posts:\n"
         for post in posts:
@@ -105,18 +97,63 @@ class main:
             blog_str += f"username: {post['author']}\n"
             if len(post['tags']) > 0:
                 blog_str += f"tags: {post['tags']}\n"
-            blog_str += f"timstamp: {post['timestamp']}\n"
+            blog_str += f"timestamp: {post['created_at']}\n"
             blog_str += f"permalink: {post['permalink']}\n"
             blog_str += f"body:\n{post['body']}\n"
             blog_str += "-------\n"
-            blog_str += "Comments:\n"
             comments = self.comments.find({'post': post['_id'], 'active': 1})
+            comments_clone = comments.clone()
+            if(len(list(comments_clone))) > 0:
+                blog_str += "Comments:\n"
             for comment in comments:
                 blog_str += f"username: {comment['user']}\n"
                 blog_str += f"permalink: {comment['permalink']}\n"
                 blog_str += f"comment:\n{comment['body']}\n\n"
         
         return blog_str
+
+    def show_blog(self, blog_name):
+        blog = self.blogs.find_one({'name': blog_name})
+        if blog is None:
+            return "No blog found"
+        blog_id = blog['_id']
+        posts = self.posts.find({'blog': blog_id, 'active': 1})
+
+        return self.get_post_comment_str(posts)
+
+
+    def find_blog(self, blog_name, search_str):
+        blog = self.blogs.find_one({'name': blog_name})
+        
+        if blog is None:
+            return "No blog found"
+        
+        blog_id = blog['_id']
+
+        posts = self.posts.find({'blog': blog_id, 'active': 1})
+        matching_posts = list()
+
+        for post in posts:
+            found = False
+            if post['body'].find(search_str) != -1:
+                matching_posts.append(post)
+                found = True
+            if found:
+                continue
+            for tag in post['tags']:
+                if tag.find(search_str) != -1:
+                    matching_posts.append(post)
+                    found = True
+                    break
+            if found:
+                continue
+            comments = self.comments.find({'post': post['_id'], 'active': 1})
+            for comment in comments:
+                if comment['body'].find(search_str) != search_str:
+                    matching_posts.append(post)
+                    break
+        
+        return self.get_post_comment_str(matching_posts)
             
             
 
@@ -162,7 +199,7 @@ if __name__ == "__main__":
                 else:
                     print(f"{output} posted successfully")
         
-        if input_arr[0] == COMMENT:
+        elif input_arr[0] == COMMENT:
             if len(input_arr) != 6:
                 print(INVALID_COMMAND)
             else:
@@ -172,16 +209,25 @@ if __name__ == "__main__":
                 else:
                     print(output)
         
-        if input_arr[0] == DELETE:
+        elif input_arr[0] == DELETE:
             if len(input_arr) != 5:
                 print(INVALID_COMMAND)
             else:
                 print(db.delete_post_comment(input_arr[1], input_arr[2], input_arr[3], input_arr[4]))
         
-        if input_arr[0] == SHOW:
+        elif input_arr[0] == SHOW:
             if len(input_arr) != 2:
                 print(INVALID_COMMAND)
             else:
                 print(db.show_blog(input_arr[1]))
+        
+        elif input_arr[0] == FIND:
+            if len(input_arr) != 3:
+                print(INVALID_COMMAND)
+            else:
+                print(db.find_blog(input_arr[1], input_arr[2]))
+        
+        else:
+            print(INVALID_COMMAND)
 
 
