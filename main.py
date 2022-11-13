@@ -1,7 +1,6 @@
 import pymongo
 from constants import *
 import re
-import datetime
 
 
 class main:
@@ -37,8 +36,7 @@ class main:
             'permalink': permalink,
             'body': post_body,
             'tags': tags_list,
-            'created_at': timestamp,
-            'active': 1
+            'created_at': timestamp
         }
         post = self.posts.insert_one(post_dict)
 
@@ -55,10 +53,9 @@ class main:
         comment_dict = {
             'blog': blog['_id'],
             'post': post['_id'],
-            'permalink': datetime.datetime.now(),
+            'permalink': timestamp,
             'user': user_name,
-            'body': comment_body,
-            'active': 1
+            'body': comment_body
         }
         comment = self.comments.insert_one(comment_dict)
 
@@ -69,12 +66,13 @@ class main:
         post = self.posts.find_one({'permalink': permalink})
         comment = self.comments.find_one({'permalink': permalink})
 
+        standard_body = f"Deleted by {user_name}"
         post_query = {'permalink': permalink}
-        post_new_values = {'$set': {'active': 0, 'timestamp': datetime.datetime.now()}}
+        post_new_values = {'$set': {'body': standard_body, 'timestamp': timestamp}}
         self.posts.update_one(post_query, post_new_values)
         
         comment_query = {'permalink': permalink}
-        comment_new_values = {'$set': {'active': 0, 'timestamp': datetime.datetime.now()}}
+        comment_new_values = {'$set': {'body': standard_body, 'timestamp': timestamp}}
         self.comments.update_one(comment_query, comment_new_values)
 
         if post is None and comment is None:
@@ -100,7 +98,7 @@ class main:
         blog_str += f"permalink: {post['permalink']}\n"
         blog_str += f"body:\n{post['body']}\n"
         
-        comments = self.comments.find({'post': post['_id'], 'active': 1})
+        comments = self.comments.find({'post': post['_id']})
         comments_clone = comments.clone()
         if(len(list(comments_clone))) > 0:
             blog_str += "Comments:\n"
@@ -117,7 +115,7 @@ class main:
         if blog is None:
             return "No blog found"
         blog_id = blog['_id']
-        posts = self.posts.find({'blog': blog_id, 'active': 1})
+        posts = self.posts.find({'blog': blog_id})
         blog_str = "Posts:\n"
         for post in posts:
             blog_str += self.get_post_comment_str(post)
@@ -133,7 +131,7 @@ class main:
         
         blog_id = blog['_id']
 
-        posts = self.posts.find({'blog': blog_id, 'active': 1})
+        posts = self.posts.find({'blog': blog_id})
         matching_posts = list()
         blog_str = "Posts:\n"
 
@@ -147,7 +145,7 @@ class main:
                 if tag.find(search_str) != -1:
                     found = True
                     break
-            comments = self.comments.find({'post': post['_id'], 'active': 1})
+            comments = self.comments.find({'post': post['_id']})
             for comment in comments:
                 if comment['body'].find(search_str) != -1:
                     found = True
