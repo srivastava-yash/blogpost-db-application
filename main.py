@@ -88,28 +88,28 @@ class main:
         
         return f"Post and Comment deleted by user: {user_name}"
     
-    def get_post_comment_str(self, posts):
+    def get_post_comment_str(self, post):
         blog_str = ""
-        blog_str += "Posts:\n"
-        for post in posts:
-            permalink = post['permalink']
-            blog_str += f"Title: {post['title']}\n"
-            blog_str += f"username: {post['author']}\n"
-            if len(post['tags']) > 0:
-                blog_str += f"tags: {post['tags']}\n"
-            blog_str += f"timestamp: {post['created_at']}\n"
-            blog_str += f"permalink: {post['permalink']}\n"
-            blog_str += f"body:\n{post['body']}\n"
-            blog_str += "-------\n"
-            comments = self.comments.find({'post': post['_id'], 'active': 1})
-            comments_clone = comments.clone()
-            if(len(list(comments_clone))) > 0:
-                blog_str += "Comments:\n"
-            for comment in comments:
-                blog_str += f"username: {comment['user']}\n"
-                blog_str += f"permalink: {comment['permalink']}\n"
-                blog_str += f"comment:\n{comment['body']}\n\n"
+
+        permalink = post['permalink']
+        blog_str += f"Title: {post['title']}\n"
+        blog_str += f"username: {post['author']}\n"
+        if len(post['tags']) > 0:
+            blog_str += f"tags: {post['tags']}\n"
+        blog_str += f"timestamp: {post['created_at']}\n"
+        blog_str += f"permalink: {post['permalink']}\n"
+        blog_str += f"body:\n{post['body']}\n"
         
+        comments = self.comments.find({'post': post['_id'], 'active': 1})
+        comments_clone = comments.clone()
+        if(len(list(comments_clone))) > 0:
+            blog_str += "Comments:\n"
+        for comment in comments:
+            blog_str += f"username: {comment['user']}\n"
+            blog_str += f"permalink: {comment['permalink']}\n"
+            blog_str += f"comment:\n{comment['body']}\n\n"
+        
+        blog_str += "-------\n"
         return blog_str
 
     def show_blog(self, blog_name):
@@ -118,8 +118,11 @@ class main:
             return "No blog found"
         blog_id = blog['_id']
         posts = self.posts.find({'blog': blog_id, 'active': 1})
+        blog_str = "Posts:\n"
+        for post in posts:
+            blog_str += self.get_post_comment_str(post)
 
-        return self.get_post_comment_str(posts)
+        return blog_str
 
 
     def find_blog(self, blog_name, search_str):
@@ -132,28 +135,27 @@ class main:
 
         posts = self.posts.find({'blog': blog_id, 'active': 1})
         matching_posts = list()
+        blog_str = "Posts:\n"
 
         for post in posts:
             found = False
+            print("initial found", found)
             if post['body'].find(search_str) != -1:
-                matching_posts.append(post)
                 found = True
-            if found:
-                continue
+
             for tag in post['tags']:
                 if tag.find(search_str) != -1:
-                    matching_posts.append(post)
+                    found = True
+                    break
+            comments = self.comments.find({'post': post['_id'], 'active': 1})
+            for comment in comments:
+                if comment['body'].find(search_str) != -1:
                     found = True
                     break
             if found:
-                continue
-            comments = self.comments.find({'post': post['_id'], 'active': 1})
-            for comment in comments:
-                if comment['body'].find(search_str) != search_str:
-                    matching_posts.append(post)
-                    break
-        
-        return self.get_post_comment_str(matching_posts)
+                blog_str += self.get_post_comment_str(post)
+            
+        return blog_str
             
             
 
