@@ -182,10 +182,13 @@ def get_input_array(input_str):
 if __name__ == "__main__":
     db = main()
     while True:
-        input_str = input("Enter command(exit or quit to close application): ")
-
-        if input_str.lower() == EXIT or input_str.lower() == QUIT:
+        try:
+            input_str = input("Enter command(exit or quit to close application): ")
+            print()
+            if input_str.lower() == EXIT or input_str.lower() == QUIT:
                 break
+        except EOFError:
+            break
         
         input_arr = get_input_array(input_str)
 
