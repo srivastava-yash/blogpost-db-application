@@ -36,7 +36,7 @@ class main:
             'permalink': permalink,
             'body': post_body,
             'tags': tags_list,
-            'created_at': timestamp
+            'timestamp': timestamp
         }
         post = self.posts.insert_one(post_dict)
 
@@ -79,10 +79,10 @@ class main:
             return "No Post and Comment found with this permalink"
         
         if comment is None:
-            return f"Post deleted by user: {user_name} \nNo comment found with this permalink"
+            return f"Post deleted by user: {user_name} \n"
         
         if post is None:
-            return f"Comment deleted by user: {user_name} \nNo Post found with this permalink"
+            return f"Comment deleted by user: {user_name} \n"
         
         return f"Post and Comment deleted by user: {user_name}"
     
@@ -94,7 +94,7 @@ class main:
         blog_str += f"username: {post['author']}\n"
         if len(post['tags']) > 0:
             blog_str += f"tags: {post['tags']}\n"
-        blog_str += f"timestamp: {post['created_at']}\n"
+        blog_str += f"timestamp: {post['timestamp']}\n"
         blog_str += f"permalink: {post['permalink']}\n"
         blog_str += f"body:\n{post['body']}\n"
         
@@ -132,12 +132,11 @@ class main:
         blog_id = blog['_id']
 
         posts = self.posts.find({'blog': blog_id})
-        matching_posts = list()
+        posts_clone = posts.clone()
         blog_str = "Posts:\n"
 
         for post in posts:
             found = False
-            print("initial found", found)
             if post['body'].find(search_str) != -1:
                 found = True
 
@@ -153,6 +152,8 @@ class main:
             if found:
                 blog_str += self.get_post_comment_str(post)
             
+        if blog_str == "Posts:\n":
+            return "No matching Posts found"
         return blog_str
             
             
